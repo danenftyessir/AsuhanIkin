@@ -2,245 +2,280 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { Search, Filter, Star, MapPin, ShoppingCart } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
+  description: string;
   price: number;
   unit: string;
   category: string;
-  farmer: string;
-  location: string;
   stock: number;
-  description: string;
   image: string;
-  rating: number;
-  reviews: number;
   organic: boolean;
-  harvestDate: string;
+  harvestDate: Date;
+  farmer: {
+    id: string;
+    name: string;
+    location: string;
+    rating: number;
+    verified: boolean;
+  };
+  averageRating: number;
+  totalReviews: number;
 }
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [currentFilter, setCurrentFilter] = useState("semua");
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState("semua");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [cart, setCart] = useState<{ [key: string]: number }>({});
+
+  const categories = [
+    { key: "semua", label: "semua" },
+    { key: "sayuran", label: "sayuran" },
+    { key: "buah", label: "buah" },
+    { key: "rempah", label: "rempah" },
+    { key: "beras", label: "beras" },
+  ];
 
   useEffect(() => {
-    const mockProducts: Product[] = [
-      {
-        id: 101,
-        name: "Cabai Merah Segar",
-        price: 35000,
-        unit: "kg",
-        category: "sayuran",
-        farmer: "Ahmad Suryadi",
-        location: "Boyolali, Jawa Tengah",
-        stock: 50,
-        description: "Cabai merah segar hasil panen langsung dari kebun",
-        image:
-          "https://images.unsplash.com/photo-1583258292688-d0213dc5252c?w=400",
-        rating: 4.8,
-        reviews: 24,
-        organic: true,
-        harvestDate: "2025-07-01",
-      },
-      {
-        id: 102,
-        name: "Jagung Manis",
-        price: 12000,
-        unit: "kg",
-        category: "sayuran",
-        farmer: "Siti Rahayu",
-        location: "Lampung Timur",
-        stock: 100,
-        description: "Jagung manis organik dengan rasa yang lezat",
-        image:
-          "https://images.unsplash.com/photo-1551754477-7421e0d9c471?w=400",
-        rating: 4.9,
-        reviews: 18,
-        organic: true,
-        harvestDate: "2025-06-28",
-      },
-      {
-        id: 103,
-        name: "Tomat Cherry Premium",
-        price: 25000,
-        unit: "500g",
-        category: "sayuran",
-        farmer: "Budi Hartono",
-        location: "Cianjur, Jawa Barat",
-        stock: 30,
-        description: "Tomat cherry hidroponik dengan rasa manis",
-        image:
-          "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400",
-        rating: 4.7,
-        reviews: 12,
-        organic: false,
-        harvestDate: "2025-06-30",
-      },
-      {
-        id: 104,
-        name: "Bawang Merah Brebes",
-        price: 28000,
-        unit: "kg",
-        category: "rempah",
-        farmer: "Joko Santoso",
-        location: "Brebes, Jawa Tengah",
-        stock: 75,
-        description: "Bawang merah asli Brebes dengan aroma khas",
-        image:
-          "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=400",
-        rating: 4.6,
-        reviews: 31,
-        organic: true,
-        harvestDate: "2025-06-25",
-      },
-      {
-        id: 105,
-        name: "Apel Manalagi",
-        price: 40000,
-        unit: "kg",
-        category: "buah",
-        farmer: "Wayan Suta",
-        location: "Malang, Jawa Timur",
-        stock: 25,
-        description: "Apel manalagi segar langsung dari kebun pegunungan",
-        image:
-          "https://images.unsplash.com/photo-1560806887-1e4cd0b69665?w=400",
-        rating: 4.5,
-        reviews: 8,
-        organic: false,
-        harvestDate: "2025-06-20",
-      },
-      {
-        id: 106,
-        name: "Beras Organik",
-        price: 18000,
-        unit: "kg",
-        category: "beras",
-        farmer: "Suparno",
-        location: "Karawang, Jawa Barat",
-        stock: 200,
-        description: "Beras organik kualitas premium tanpa pestisida",
-        image:
-          "https://images.unsplash.com/photo-1586201375765-c128505293de?w=400",
-        rating: 4.8,
-        reviews: 45,
-        organic: true,
-        harvestDate: "2025-06-15",
-      },
-    ];
+    fetchProducts();
+  }, [selectedCategory, searchQuery]);
 
-    setProducts(mockProducts);
-  }, []);
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedCategory !== "semua")
+        params.append("category", selectedCategory);
+      if (searchQuery) params.append("search", searchQuery);
 
-  const filteredProducts =
-    currentFilter === "semua"
-      ? products
-      : products.filter((product) => product.category === currentFilter);
+      const response = await fetch(`/api/products?${params}`);
+      const data = await response.json();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+      if (data.success) {
+        setProducts(data.data);
+      }
+    } catch (error) {
+      console.error("error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filterButtons = [
-    { key: "semua", label: "Semua" },
-    { key: "sayuran", label: "Sayuran" },
-    { key: "buah", label: "Buah" },
-    { key: "rempah", label: "Rempah" },
-    { key: "beras", label: "Beras" },
-  ];
+  const addToCart = (productId: string) => {
+    setCart((prev) => ({
+      ...prev,
+      [productId]: (prev[productId] || 0) + 1,
+    }));
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      selectedCategory === "semua" || product.category === selectedCategory;
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="page active">
       <div className="page-header">
-        <h1 className="page-title">Marketplace</h1>
-        <p className="page-subtitle">
-          Beli hasil panen segar langsung dari petani
-        </p>
+        <h1 className="page-title">marketplace</h1>
+        <p className="page-subtitle">produk segar langsung dari petani</p>
       </div>
 
-      <div className="filter-bar">
-        {filterButtons.map((button) => (
-          <button
-            key={button.key}
-            className={`filter-btn ${
-              currentFilter === button.key ? "active" : ""
-            }`}
-            onClick={() => setCurrentFilter(button.key)}
-          >
-            {button.label}
+      <div className="card">
+        <div
+          style={{
+            display: "flex",
+            gap: "1rem",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <div style={{ flex: 1, position: "relative" }}>
+            <Search
+              size={20}
+              style={{
+                position: "absolute",
+                left: "1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--text-light)",
+              }}
+            />
+            <input
+              type="text"
+              placeholder="cari produk..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input"
+              style={{ paddingLeft: "3rem" }}
+            />
+          </div>
+          <button className="btn btn-outline">
+            <Filter size={16} />
+            filter
           </button>
-        ))}
+        </div>
+
+        <div className="filter-bar">
+          {categories.map((category) => (
+            <button
+              key={category.key}
+              className={`filter-btn ${
+                selectedCategory === category.key ? "active" : ""
+              }`}
+              onClick={() => setSelectedCategory(category.key)}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-2">
-        {filteredProducts.map((product) => (
-          <div key={product.id} className="product-card">
-            <div style={{ position: "relative" }}>
+      {loading ? (
+        <div className="card">
+          <p>memuat produk...</p>
+        </div>
+      ) : (
+        <div className="grid grid-2">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="product-card">
               <Image
                 src={product.image}
                 alt={product.name}
-                width={400}
+                width={300}
                 height={160}
                 className="product-image"
               />
-              {product.organic && (
-                <span
-                  className="organic-badge"
+              <div className="product-content">
+                <div
                   style={{
-                    position: "absolute",
-                    top: "0.5rem",
-                    right: "0.5rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "0.5rem",
                   }}
                 >
-                  Organik
-                </span>
-              )}
-            </div>
-            <div className="product-content">
-              <h4 className="product-name">{product.name}</h4>
-              <p className="product-farmer">oleh {product.farmer}</p>
-              <p
-                style={{
-                  color: "var(--text-light)",
-                  fontSize: "0.8rem",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                {product.location}
-              </p>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <p className="product-price">
-                  {formatCurrency(product.price)}/{product.unit}
-                </p>
+                  <h4 className="product-name">{product.name}</h4>
+                  {product.organic && (
+                    <span className="organic-badge">organik</span>
+                  )}
+                </div>
+
+                <div className="product-farmer">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <MapPin size={14} />
+                    <span>{product.farmer.name}</span>
+                    {product.farmer.verified && (
+                      <span style={{ color: "var(--primary-green)" }}>✓</span>
+                    )}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-light)",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    {product.farmer.location}
+                  </p>
+                </div>
+
                 <div className="product-rating">
-                  <span className="star">★</span>
-                  <span style={{ fontSize: "0.8rem" }}>{product.rating}</span>
+                  <Star className="star" size={16} fill="currentColor" />
+                  <span>{product.averageRating}</span>
+                  <span
+                    style={{ color: "var(--text-light)", fontSize: "0.8rem" }}
+                  >
+                    ({product.totalReviews} ulasan)
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <div>
+                    <div className="product-price">
+                      {formatCurrency(product.price)}/{product.unit}
+                    </div>
+                    <div
+                      style={{ fontSize: "0.8rem", color: "var(--text-light)" }}
+                    >
+                      stok: {product.stock} {product.unit}
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => addToCart(product.id)}
+                  >
+                    <ShoppingCart size={16} />
+                    {cart[product.id] ? `(${cart[product.id]})` : ""}
+                  </button>
                 </div>
               </div>
-              <p
-                style={{
-                  color: "var(--text-light)",
-                  fontSize: "0.8rem",
-                  marginTop: "0.5rem",
-                }}
-              >
-                Stok: {product.stock} {product.unit}
-              </p>
             </div>
+          ))}
+        </div>
+      )}
+
+      {filteredProducts.length === 0 && !loading && (
+        <div className="card">
+          <div style={{ textAlign: "center", padding: "2rem" }}>
+            <h3>produk tidak ditemukan</h3>
+            <p style={{ color: "var(--text-light)" }}>
+              coba ubah filter atau kata kunci pencarian
+            </p>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {Object.keys(cart).length > 0 && (
+        <div
+          className="card"
+          style={{
+            position: "fixed",
+            bottom: "100px",
+            left: "1rem",
+            right: "1rem",
+            zIndex: 99,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <strong>
+                {Object.values(cart).reduce((sum, qty) => sum + qty, 0)} item
+                dalam keranjang
+              </strong>
+            </div>
+            <button className="btn btn-primary">lihat keranjang</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

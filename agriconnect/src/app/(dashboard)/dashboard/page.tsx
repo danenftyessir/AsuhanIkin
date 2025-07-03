@@ -3,198 +3,328 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
+import { formatCurrency } from "@/lib/utils";
+import {
+  TrendingUp,
+  DollarSign,
+  Target,
+  Award,
+  Activity,
+  Bell,
+  ShoppingCart,
+  Camera,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
 
 interface Investment {
-  id: number;
+  id: string;
   title: string;
-  subtitle: string;
-  description: string;
-  roi: string;
-  duration: string;
-  minInvest: string;
-  target: string;
-  collected: string;
-  investors: number;
-  status: string;
+  location: string;
+  roi: number;
+  amount: number;
   progress: number;
+  status: string;
   image: string;
+  farmer: {
+    name: string;
+    avatar: string;
+  };
 }
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  unit: string;
-  category: string;
-  farmer: string;
-  location: string;
-  stock: number;
-  image: string;
-  rating: number;
-  organic: boolean;
+interface RecentActivity {
+  id: string;
+  type: string;
+  message: string;
+  time: string;
+  icon: string;
+}
+
+interface Notification {
+  id: string;
+  type: string;
+  message: string;
+  time: string;
+  read: boolean;
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [investments, setInvestments] = useState<Investment[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [activities, setActivities] = useState<RecentActivity[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // mock data loading
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = () => {
     const mockInvestments: Investment[] = [
       {
-        id: 1,
-        title: "Cabai Merah Premium",
-        subtitle: "Boyolali, Jawa Tengah",
-        description:
-          "Proyek penanaman cabai merah dengan sistem IoT monitoring",
-        roi: "18%",
-        duration: "6 bulan",
-        minInvest: "Rp 1.000.000",
-        target: "Rp 50.000.000",
-        collected: "Rp 32.000.000",
-        investors: 8,
-        status: "funding",
-        progress: 65,
+        id: "1",
+        title: "cabai merah premium",
+        location: "boyolali, jawa tengah",
+        roi: 18,
+        amount: 5000000,
+        progress: 75,
+        status: "planting",
         image:
-          "https://images.unsplash.com/photo-1592921870789-04563d55041c?w=600",
+          "https://images.unsplash.com/photo-1592921870789-04563d55041c?w=300",
+        farmer: {
+          name: "ahmad suryadi",
+          avatar: "https://i.pravatar.cc/150?u=ahmad",
+        },
       },
       {
-        id: 2,
-        title: "Jagung Manis Organik",
-        subtitle: "Lampung Timur",
-        description:
-          "Budidaya jagung manis organik dengan metode ramah lingkungan",
-        roi: "15%",
-        duration: "4 bulan",
-        minInvest: "Rp 500.000",
-        target: "Rp 25.000.000",
-        collected: "Rp 18.000.000",
-        investors: 4,
+        id: "2",
+        title: "jagung manis organik",
+        location: "lampung timur",
+        roi: 15,
+        amount: 3000000,
+        progress: 45,
         status: "planting",
-        progress: 85,
         image:
-          "https://images.unsplash.com/photo-1551754477-7421e0d9c471?w=600",
+          "https://images.unsplash.com/photo-1551754477-7421e0d9c471?w=300",
+        farmer: {
+          name: "siti rahayu",
+          avatar: "https://i.pravatar.cc/150?u=siti",
+        },
+      },
+      {
+        id: "3",
+        title: "tomat cherry hidroponik",
+        location: "cianjur, jawa barat",
+        roi: 22,
+        amount: 2000000,
+        progress: 30,
+        status: "funding",
+        image:
+          "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=300",
+        farmer: {
+          name: "budi hartono",
+          avatar: "https://i.pravatar.cc/150?u=budi",
+        },
       },
     ];
 
-    const mockProducts: Product[] = [
+    const mockActivities: RecentActivity[] = [
       {
-        id: 101,
-        name: "Cabai Merah Segar",
-        price: 35000,
-        unit: "kg",
-        category: "sayuran",
-        farmer: "Ahmad Suryadi",
-        location: "Boyolali, Jawa Tengah",
-        stock: 50,
-        image:
-          "https://images.unsplash.com/photo-1583258292688-d0213dc5252c?w=400",
-        rating: 4.8,
-        organic: true,
+        id: "1",
+        type: "investment",
+        message: "investasi cabai merah mencapai progress 75%",
+        time: "2 jam lalu",
+        icon: "📈",
       },
       {
-        id: 102,
-        name: "Jagung Manis",
-        price: 12000,
-        unit: "kg",
-        category: "sayuran",
-        farmer: "Siti Rahayu",
-        location: "Lampung Timur",
-        stock: 100,
-        image:
-          "https://images.unsplash.com/photo-1551754477-7421e0d9c471?w=400",
-        rating: 4.9,
-        organic: true,
+        id: "2",
+        type: "return",
+        message: "return investasi jagung manis sebesar rp 450.000",
+        time: "1 hari lalu",
+        icon: "💰",
       },
       {
-        id: 103,
-        name: "Tomat Cherry Premium",
-        price: 25000,
-        unit: "500g",
-        category: "sayuran",
-        farmer: "Budi Hartono",
-        location: "Cianjur, Jawa Barat",
-        stock: 30,
-        image:
-          "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400",
-        rating: 4.7,
-        organic: false,
+        id: "3",
+        type: "purchase",
+        message: "pembelian cabai segar 2kg berhasil",
+        time: "2 hari lalu",
+        icon: "🛒",
+      },
+      {
+        id: "4",
+        type: "message",
+        message: "pesan baru dari ahmad suryadi",
+        time: "3 hari lalu",
+        icon: "💬",
+      },
+    ];
+
+    const mockNotifications: Notification[] = [
+      {
+        id: "1",
+        type: "investment",
+        message: "investasi cabai merah siap panen dalam 2 minggu",
+        time: "1 jam lalu",
+        read: false,
+      },
+      {
+        id: "2",
+        type: "market",
+        message: "harga cabai merah naik 15% minggu ini",
+        time: "3 jam lalu",
+        read: false,
+      },
+      {
+        id: "3",
+        type: "system",
+        message: "update aplikasi tersedia",
+        time: "1 hari lalu",
+        read: true,
       },
     ];
 
     setInvestments(mockInvestments);
-    setProducts(mockProducts);
-  }, []);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+    setActivities(mockActivities);
+    setNotifications(mockNotifications);
+    setLoading(false);
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "funding":
+        return "var(--secondary-blue)";
+      case "planting":
+        return "var(--secondary-orange)";
+      case "harvesting":
+        return "var(--primary-green)";
+      case "completed":
+        return "var(--text-light)";
+      default:
+        return "var(--text-light)";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "funding":
+        return "pendanaan";
+      case "planting":
+        return "penanaman";
+      case "harvesting":
+        return "panen";
+      case "completed":
+        return "selesai";
+      default:
+        return status;
+    }
+  };
+
+  const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
+  const avgROI =
+    investments.reduce((sum, inv) => sum + inv.roi, 0) / investments.length;
+  const activeInvestments = investments.filter(
+    (inv) => inv.status !== "completed"
+  ).length;
+  const estimatedReturn = investments.reduce(
+    (sum, inv) => sum + inv.amount * (inv.roi / 100),
+    0
+  );
+
+  if (loading) {
+    return (
+      <div className="page active">
+        <div className="card">
+          <p>memuat dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page active">
       <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Selamat datang di AgriConnect</p>
+        <h1 className="page-title">dashboard investor</h1>
+        <p className="page-subtitle">
+          selamat datang, {user?.name || "investor"}
+        </p>
       </div>
 
       <div className="stats-grid">
         <div className="stat-card green">
-          <div className="stat-value">Rp 25M</div>
-          <div className="stat-label">Total Investasi</div>
+          <div className="stat-value">{formatCurrency(totalInvestment)}</div>
+          <div className="stat-label">total investasi</div>
         </div>
         <div className="stat-card blue">
-          <div className="stat-value">8</div>
-          <div className="stat-label">Proyek Aktif</div>
+          <div className="stat-value">{activeInvestments}</div>
+          <div className="stat-label">investasi aktif</div>
         </div>
         <div className="stat-card orange">
-          <div className="stat-value">+12.5%</div>
-          <div className="stat-label">ROI</div>
+          <div className="stat-value">{avgROI.toFixed(1)}%</div>
+          <div className="stat-label">rata-rata roi</div>
+        </div>
+        <div className="stat-card purple">
+          <div className="stat-value">{formatCurrency(estimatedReturn)}</div>
+          <div className="stat-label">estimasi return</div>
         </div>
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">Rekomendasi Investasi</h3>
-          <Link href="/investment" className="btn btn-sm btn-outline">
-            Lihat Semua
+          <h3 className="card-title">investasi saya</h3>
+          <Link href="/investment" className="btn btn-outline btn-sm">
+            lihat semua
           </Link>
         </div>
         <div className="grid grid-2">
-          {investments.map((investment) => (
-            <div key={investment.id} className="investment-card">
-              <Image
-                src={investment.image}
-                alt={investment.title}
-                width={600}
-                height={200}
-                className="investment-image"
-              />
-              <div className="investment-content">
-                <h3 className="investment-title">{investment.title}</h3>
-                <p className="investment-subtitle">{investment.subtitle}</p>
-                <div className="investment-stats">
-                  <div className="investment-stat">
-                    <div className="investment-stat-value">
-                      {investment.roi}
-                    </div>
-                    <div className="investment-stat-label">ROI</div>
+          {investments.slice(0, 2).map((investment) => (
+            <div key={investment.id} className="card">
+              <div
+                style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}
+              >
+                <Image
+                  src={investment.image}
+                  alt={investment.title}
+                  width={80}
+                  height={80}
+                  style={{ borderRadius: "8px", objectFit: "cover" }}
+                />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
+                    {investment.title}
+                  </h4>
+                  <p
+                    style={{
+                      color: "var(--text-light)",
+                      fontSize: "0.9rem",
+                      marginBottom: "0.5rem",
+                    }}
+                  >
+                    {investment.location}
+                  </p>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: getStatusColor(investment.status),
+                        color: "white",
+                        padding: "0.25rem 0.5rem",
+                        borderRadius: "12px",
+                        fontSize: "0.8rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {getStatusText(investment.status)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.9rem",
+                        fontWeight: "600",
+                        color: "var(--primary-green)",
+                      }}
+                    >
+                      {investment.roi}% roi
+                    </span>
                   </div>
-                  <div className="investment-stat">
-                    <div className="investment-stat-value">
-                      {investment.duration}
-                    </div>
-                    <div className="investment-stat-label">Durasi</div>
-                  </div>
-                  <div className="investment-stat">
-                    <div className="investment-stat-value">
-                      {investment.investors}
-                    </div>
-                    <div className="investment-stat-label">Investor</div>
-                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.9rem",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <span>progress</span>
+                  <span>{investment.progress}%</span>
                 </div>
                 <div className="progress-bar">
                   <div
@@ -203,6 +333,47 @@ export default function DashboardPage() {
                   />
                 </div>
               </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div
+                    style={{ fontSize: "0.8rem", color: "var(--text-light)" }}
+                  >
+                    investasi saya
+                  </div>
+                  <div style={{ fontWeight: "600" }}>
+                    {formatCurrency(investment.amount)}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      background: `url(${investment.farmer.avatar}) center/cover`,
+                      backgroundColor: "var(--primary-green)",
+                    }}
+                  />
+                  <span
+                    style={{ fontSize: "0.9rem", color: "var(--text-light)" }}
+                  >
+                    {investment.farmer.name}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -210,33 +381,113 @@ export default function DashboardPage() {
 
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">Produk Terbaru</h3>
-          <Link href="/marketplace" className="btn btn-sm btn-outline">
-            Lihat Semua
-          </Link>
+          <h3 className="card-title">aktivitas terbaru</h3>
         </div>
-        <div className="grid grid-3">
-          {products.map((product) => (
-            <div key={product.id} className="product-card">
-              <Image
-                src={product.image}
-                alt={product.name}
-                width={400}
-                height={160}
-                className="product-image"
-              />
-              <div className="product-content">
-                <h4 className="product-name">{product.name}</h4>
-                <p className="product-farmer">by {product.farmer}</p>
-                <p className="product-price">
-                  {formatCurrency(product.price)}/{product.unit}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {activities.map((activity) => (
+            <div
+              key={activity.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem",
+                padding: "1rem",
+                background: "var(--bg-light)",
+                borderRadius: "8px",
+              }}
+            >
+              <div style={{ fontSize: "1.5rem" }}>{activity.icon}</div>
+              <div style={{ flex: 1 }}>
+                <p style={{ marginBottom: "0.25rem" }}>{activity.message}</p>
+                <p style={{ color: "var(--text-light)", fontSize: "0.8rem" }}>
+                  {activity.time}
                 </p>
-                {product.organic && (
-                  <span className="organic-badge">Organik</span>
-                )}
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">notifikasi</h3>
+          <span
+            style={{
+              background: "var(--primary-green)",
+              color: "white",
+              borderRadius: "50%",
+              width: "24px",
+              height: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "0.8rem",
+              fontWeight: "600",
+            }}
+          >
+            {notifications.filter((n) => !n.read).length}
+          </span>
+        </div>
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
+          {notifications.slice(0, 3).map((notification) => (
+            <div
+              key={notification.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                padding: "0.75rem",
+                background: notification.read
+                  ? "transparent"
+                  : "var(--light-green)",
+                borderRadius: "8px",
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <p style={{ marginBottom: "0.25rem" }}>
+                  {notification.message}
+                </p>
+                <p style={{ color: "var(--text-light)", fontSize: "0.8rem" }}>
+                  {notification.time}
+                </p>
+              </div>
+              {!notification.read && (
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "var(--primary-green)",
+                    marginTop: "0.5rem",
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 className="card-title">aksi cepat</h3>
+        <div className="grid grid-2">
+          <Link href="/investment" className="btn btn-primary">
+            <DollarSign size={16} />
+            cari investasi
+          </Link>
+          <Link href="/marketplace" className="btn btn-secondary">
+            <ShoppingCart size={16} />
+            belanja produk
+          </Link>
+          <Link href="/monitoring" className="btn btn-outline">
+            <Camera size={16} />
+            monitoring iot
+          </Link>
+          <Link href="/chat" className="btn btn-outline">
+            <MessageCircle size={16} />
+            chat petani
+          </Link>
         </div>
       </div>
     </div>

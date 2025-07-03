@@ -1,274 +1,388 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Thermometer, Droplets, Activity, Leaf, Camera, AlertTriangle, CheckCircle } from "lucide-react";
 
-interface IoTSensorData {
+interface IoTData {
+  id: string;
+  farmName: string;
+  location: string;
   temperature: number;
   humidity: number;
   soilPh: number;
   nutrients: number;
-  timestamp: string;
+  lastUpdate: Date;
+  status: "normal" | "warning" | "critical";
+  alerts: string[];
 }
 
-interface ProgressStage {
+interface GrowthProgress {
   stage: string;
   description: string;
-  status: "completed" | "ongoing" | "pending";
+  progress: number;
+  date: Date;
 }
 
 export default function MonitoringPage() {
-  const [sensorData, setSensorData] = useState<IoTSensorData>({
-    temperature: 28,
-    humidity: 75,
-    soilPh: 6.8,
-    nutrients: 85,
-    timestamp: new Date().toISOString(),
-  });
-
-  const [progressStages] = useState<ProgressStage[]>([
-    {
-      stage: "Minggu 1-2: Perkecambahan",
-      description: "Proses perkecambahan benih",
-      status: "completed",
-    },
-    {
-      stage: "Minggu 3-4: Daun Pertama",
-      description: "Pertumbuhan daun pertama",
-      status: "completed",
-    },
-    {
-      stage: "Minggu 5-8: Pertumbuhan Vegetatif",
-      description: "Fase pertumbuhan vegetatif aktif",
-      status: "ongoing",
-    },
-    {
-      stage: "Minggu 9-12: Pembungaan",
-      description: "Fase pembungaan dan pembentukan buah",
-      status: "pending",
-    },
-  ]);
+  const [farms, setFarms] = useState<IoTData[]>([]);
+  const [selectedFarm, setSelectedFarm] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [showCamera, setShowCamera] = useState(false);
 
   useEffect(() => {
-    // simulate real-time IoT data updates
-    const interval = setInterval(() => {
-      setSensorData((prev) => ({
-        ...prev,
-        temperature: +(25 + Math.random() * 10).toFixed(1),
-        humidity: +(60 + Math.random() * 30).toFixed(0),
-        soilPh: +(6.0 + Math.random() * 2).toFixed(1),
-        nutrients: +(70 + Math.random() * 30).toFixed(0),
-        timestamp: new Date().toISOString(),
-      }));
-    }, 30000);
-
-    return () => clearInterval(interval);
+    loadMonitoringData();
   }, []);
+
+  const loadMonitoringData = () => {
+    const mockData: IoTData[] = [
+      {
+        id: "1",
+        farmName: "lahan cabai utama",
+        location: "boyolali, jawa tengah",
+        temperature: 28.5,
+        humidity: 75,
+        soilPh: 6.8,
+        nutrients: 85,
+        lastUpdate: new Date(),
+        status: "normal",
+        alerts: []
+      },
+      {
+        id: "2",
+        farmName: "lahan tomat hidroponik",
+        location: "cianjur, jawa barat",
+        temperature: 32.1,
+        humidity: 45,
+        soilPh: 6.2,
+        nutrients: 62,
+        lastUpdate: new Date(Date.now() - 15 * 60000),
+        status: "warning",
+        alerts: ["suhu terlalu tinggi", "kelembaban rendah"]
+      },
+      {
+        id: "3",
+        farmName: "lahan jagung organik",
+        location: "lampung timur",
+        temperature: 29.1,
+        humidity: 70,
+        soilPh: 6.9,
+        nutrients: 92,
+        lastUpdate: new Date(Date.now() - 5 * 60000),
+        status: "normal",
+        alerts: []
+      }
+    ];
+
+    setFarms(mockData);
+    setSelectedFarm(mockData[0]?.id || "");
+    setLoading(false);
+  };
+
+  const currentFarm = farms.find(f => f.id === selectedFarm);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "normal": return "var(--primary-green)";
+      case "warning": return "var(--secondary-orange)";
+      case "critical": return "#e74c3c";
+      default: return "var(--text-light)";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "normal": return <CheckCircle size={20} color="var(--primary-green)" />;
+      case "warning": return <AlertTriangle size={20} color="var(--secondary-orange)" />;
+      case "critical": return <AlertTriangle size={20} color="#e74c3c" />;
+      default: return <Activity size={20} />;
+    }
+  };
 
   const getSensorStatus = (value: number, type: string) => {
     switch (type) {
       case "temperature":
-        return value >= 20 && value <= 35
-          ? "good"
-          : value > 35
-          ? "warning"
-          : "danger";
+        if (value >= 25 && value <= 30) return "normal";
+        if (value >= 20 && value <= 35) return "warning";
+        return "critical";
       case "humidity":
-        return value >= 60 && value <= 80
-          ? "good"
-          : value > 80
-          ? "warning"
-          : "danger";
+        if (value >= 60 && value <= 80) return "normal";
+        if (value >= 40 && value <= 90) return "warning";
+        return "critical";
       case "ph":
-        return value >= 6.0 && value <= 7.5 ? "good" : "warning";
+        if (value >= 6.0 && value <= 7.0) return "normal";
+        if (value >= 5.5 && value <= 7.5) return "warning";
+        return "critical";
       case "nutrients":
-        return value >= 70 ? "good" : value >= 50 ? "warning" : "danger";
+        if (value >= 70) return "normal";
+        if (value >= 50) return "warning";
+        return "critical";
       default:
-        return "good";
+        return "normal";
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "good":
-        return "Optimal";
-      case "warning":
-        return "Perhatian";
-      case "danger":
-        return "Bahaya";
-      default:
-        return "Normal";
+  const progressData: GrowthProgress[] = [
+    {
+      stage: "perkecambahan",
+      description: "benih berhasil berkecambah dengan tingkat keberhasilan 95%",
+      progress: 100,
+      date: new Date("2025-06-05")
+    },
+    {
+      stage: "pertumbuhan vegetatif",
+      description: "tanaman tumbuh dengan baik, tinggi rata-rata 25cm",
+      progress: 75,
+      date: new Date("2025-06-20")
+    },
+    {
+      stage: "pembungaan",
+      description: "mulai muncul bunga, perlu perhatian khusus untuk penyiraman",
+      progress: 45,
+      date: new Date("2025-07-01")
+    },
+    {
+      stage: "pembuahan",
+      description: "fase pembentukan buah, monitoring nutrisi intensif",
+      progress: 0,
+      date: new Date("2025-07-15")
     }
-  };
-
-  const getProgressIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "✅";
-      case "ongoing":
-        return "🔄";
-      case "pending":
-        return "⏳";
-      default:
-        return "⏳";
-    }
-  };
-
-  const getProgressColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "var(--primary-green)";
-      case "ongoing":
-        return "var(--secondary-blue)";
-      case "pending":
-        return "var(--text-light)";
-      default:
-        return "var(--text-light)";
-    }
-  };
+  ];
 
   return (
     <div className="page active">
       <div className="page-header">
-        <h1 className="page-title">Monitoring IoT</h1>
-        <p className="page-subtitle">
-          Pantau kondisi real-time lahan investasi Anda
-        </p>
+        <h1 className="page-title">monitoring iot</h1>
+        <p className="page-subtitle">pantau kondisi lahan secara real-time</p>
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">Live Camera Feed</h3>
-          <span className="status-badge status-funding">🔴 LIVE</span>
+          <h3 className="card-title">pilih lahan</h3>
         </div>
-        <div
-          style={{
-            background: "#000",
-            borderRadius: "12px",
-            height: "200px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            marginBottom: "1rem",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>📹</div>
-            <p>Live Camera Feed</p>
-            <p style={{ fontSize: "0.9rem", opacity: 0.8 }}>
-              Lahan Cabai - Ahmad Suryadi
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3 className="card-title">Sensor Data Real-time</h3>
-        <div className="iot-grid">
-          <div className="iot-sensor">
-            <div className="iot-icon">🌡️</div>
-            <div
-              className="iot-value"
-              style={{ color: "var(--primary-green)" }}
+        <div className="filter-bar">
+          {farms.map((farm) => (
+            <button
+              key={farm.id}
+              className={`filter-btn ${selectedFarm === farm.id ? "active" : ""}`}
+              onClick={() => setSelectedFarm(farm.id)}
             >
-              {sensorData.temperature}°C
-            </div>
-            <div className="iot-label">Suhu Tanah</div>
-            <div
-              className={`iot-status ${getSensorStatus(
-                sensorData.temperature,
-                "temperature"
-              )}`}
-            >
-              {getStatusText(
-                getSensorStatus(sensorData.temperature, "temperature")
-              )}
-            </div>
-          </div>
-          <div className="iot-sensor">
-            <div className="iot-icon">💧</div>
-            <div
-              className="iot-value"
-              style={{ color: "var(--secondary-blue)" }}
-            >
-              {sensorData.humidity}%
-            </div>
-            <div className="iot-label">Kelembaban</div>
-            <div
-              className={`iot-status ${getSensorStatus(
-                sensorData.humidity,
-                "humidity"
-              )}`}
-            >
-              {getStatusText(getSensorStatus(sensorData.humidity, "humidity"))}
-            </div>
-          </div>
-          <div className="iot-sensor">
-            <div className="iot-icon">⚗️</div>
-            <div
-              className="iot-value"
-              style={{ color: "var(--secondary-purple)" }}
-            >
-              {sensorData.soilPh}
-            </div>
-            <div className="iot-label">pH Tanah</div>
-            <div
-              className={`iot-status ${getSensorStatus(
-                sensorData.soilPh,
-                "ph"
-              )}`}
-            >
-              {getStatusText(getSensorStatus(sensorData.soilPh, "ph"))}
-            </div>
-          </div>
-          <div className="iot-sensor">
-            <div className="iot-icon">🌱</div>
-            <div
-              className="iot-value"
-              style={{ color: "var(--secondary-orange)" }}
-            >
-              {sensorData.nutrients}%
-            </div>
-            <div className="iot-label">Nutrisi NPK</div>
-            <div
-              className={`iot-status ${getSensorStatus(
-                sensorData.nutrients,
-                "nutrients"
-              )}`}
-            >
-              {getStatusText(
-                getSensorStatus(sensorData.nutrients, "nutrients")
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3 className="card-title">Progress Pertumbuhan</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {progressStages.map((stage, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>{stage.stage}</span>
-              <span style={{ color: getProgressColor(stage.status) }}>
-                {getProgressIcon(stage.status)}{" "}
-                {stage.status === "completed"
-                  ? "Selesai"
-                  : stage.status === "ongoing"
-                  ? "Berlangsung"
-                  : "Menunggu"}
-              </span>
-            </div>
+              {farm.farmName}
+            </button>
           ))}
         </div>
       </div>
+
+      {currentFarm && (
+        <>
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">{currentFarm.farmName}</h3>
+                <p className="card-subtitle">{currentFarm.location}</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                {getStatusIcon(currentFarm.status)}
+                <span style={{ color: getStatusColor(currentFarm.status), fontWeight: "500" }}>
+                  {currentFarm.status}
+                </span>
+              </div>
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+              update terakhir: {currentFarm.lastUpdate.toLocaleString('id-ID')}
+            </div>
+          </div>
+
+          <div className="grid grid-2">
+            <div className="card">
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                <div style={{ 
+                  background: getStatusColor(getSensorStatus(currentFarm.temperature, "temperature")),
+                  color: "white",
+                  padding: "0.75rem",
+                  borderRadius: "12px"
+                }}>
+                  <Thermometer size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: "600" }}>
+                    {currentFarm.temperature}°C
+                  </div>
+                  <div style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
+                    suhu udara
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                optimal: 25-30°C
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                <div style={{ 
+                  background: getStatusColor(getSensorStatus(currentFarm.humidity, "humidity")),
+                  color: "white",
+                  padding: "0.75rem",
+                  borderRadius: "12px"
+                }}>
+                  <Droplets size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: "600" }}>
+                    {currentFarm.humidity}%
+                  </div>
+                  <div style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
+                    kelembaban
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                optimal: 60-80%
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                <div style={{ 
+                  background: getStatusColor(getSensorStatus(currentFarm.soilPh, "ph")),
+                  color: "white",
+                  padding: "0.75rem",
+                  borderRadius: "12px"
+                }}>
+                  <Activity size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: "600" }}>
+                    {currentFarm.soilPh}
+                  </div>
+                  <div style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
+                    ph tanah
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                optimal: 6.0-7.0
+              </div>
+            </div>
+
+            <div className="card">
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+                <div style={{ 
+                  background: getStatusColor(getSensorStatus(currentFarm.nutrients, "nutrients")),
+                  color: "white",
+                  padding: "0.75rem",
+                  borderRadius: "12px"
+                }}>
+                  <Leaf size={24} />
+                </div>
+                <div>
+                  <div style={{ fontSize: "1.5rem", fontWeight: "600" }}>
+                    {currentFarm.nutrients}%
+                  </div>
+                  <div style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
+                    nutrisi tanah
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                optimal: {'>'}70%
+              </div>
+            </div>
+          </div>
+
+          {currentFarm.alerts.length > 0 && (
+            <div className="card">
+              <div className="card-header">
+                <h3 className="card-title">peringatan</h3>
+                <AlertTriangle size={20} color="var(--secondary-orange)" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                {currentFarm.alerts.map((alert, index) => (
+                  <div key={index} style={{ 
+                    background: "#fff3cd",
+                    color: "#856404",
+                    padding: "0.75rem",
+                    borderRadius: "8px",
+                    borderLeft: "4px solid var(--secondary-orange)"
+                  }}>
+                    {alert}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">live camera</h3>
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => setShowCamera(!showCamera)}
+              >
+                <Camera size={16} />
+                {showCamera ? "tutup" : "buka"} kamera
+              </button>
+            </div>
+            {showCamera && (
+              <div style={{ 
+                width: "100%",
+                height: "250px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontSize: "1.1rem",
+                fontWeight: "500"
+              }}>
+                🎥 live feed dari lahan
+                <br />
+                <span style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+                  (simulasi camera untuk demo)
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">progress pertumbuhan</h3>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {progressData.map((stage, index) => (
+                <div key={index} style={{ 
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "8px",
+                  padding: "1rem"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                    <h4 style={{ fontWeight: "600", textTransform: "capitalize" }}>
+                      {stage.stage}
+                    </h4>
+                    <span style={{ fontSize: "0.8rem", color: "var(--text-light)" }}>
+                      {stage.date.toLocaleDateString('id-ID')}
+                    </span>
+                  </div>
+                  <p style={{ color: "var(--text-light)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+                    {stage.description}
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                    <span style={{ fontSize: "0.9rem" }}>progress</span>
+                    <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>{stage.progress}%</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className="progress-fill" 
+                      style={{ width: `${stage.progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

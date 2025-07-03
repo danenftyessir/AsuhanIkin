@@ -42,6 +42,11 @@ export interface Investment {
   investors: InvestmentUser[];
   iotData: IoTData[];
   progressLogs: ProgressLog[];
+
+  // computed fields
+  progress?: number;
+  investorsCount?: number;
+  daysLeft?: number;
 }
 
 export interface InvestmentUser {

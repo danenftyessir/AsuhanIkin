@@ -1,380 +1,392 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
+import {
+  BookOpen,
+  Heart,
+  Brain,
+  Shield,
+  Users,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
 
-interface NutritionData {
-  name: string;
-  icon: string;
-  calories: number;
-  vitaminC?: number;
-  fiber?: number;
-  lycopene?: number;
-  quercetin?: string;
-  benefits: string[];
+interface NutritionArticle {
+  id: string;
+  title: string;
   description: string;
-  nutrients: {
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    calcium?: number;
-    iron?: number;
-    potassium?: number;
-  };
+  category: string;
+  image: string;
+  readTime: number;
+  likes: number;
+  author: string;
+}
+
+interface ForumPost {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  replies: number;
+  likes: number;
+  createdAt: Date;
 }
 
 export default function EducationPage() {
-  const [nutritionData, setNutritionData] = useState<NutritionData[]>([]);
+  const [activeTab, setActiveTab] = useState("nutrisi");
+  const [articles, setArticles] = useState<NutritionArticle[]>([]);
+  const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("semua");
 
   useEffect(() => {
-    const mockNutritionData: NutritionData[] = [
+    loadEducationContent();
+    loadForumPosts();
+  }, []);
+
+  const loadEducationContent = () => {
+    const mockArticles: NutritionArticle[] = [
       {
-        name: "Cabai Merah",
-        icon: "🌶️",
-        calories: 21,
-        vitaminC: 318,
-        benefits: ["Antioksidan Tinggi", "Boost Imun", "Anti Inflamasi"],
+        id: "1",
+        title: "manfaat vitamin c dalam sayuran hijau",
         description:
-          "Kaya vitamin C dan capsaicin yang baik untuk kesehatan jantung dan metabolisme.",
-        nutrients: {
-          protein: 1.9,
-          carbs: 4.3,
-          fat: 0.4,
-          calcium: 20,
-          iron: 1.2,
-          potassium: 340,
-        },
+          "pelajari pentingnya vitamin c untuk sistem imun dan sumber terbaik dari sayuran hijau",
+        category: "vitamin",
+        image:
+          "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300",
+        readTime: 5,
+        likes: 234,
+        author: "dr. nutrisi",
       },
       {
-        name: "Jagung Manis",
-        icon: "🌽",
-        calories: 86,
-        fiber: 2.7,
-        benefits: ["Energi", "Serat Tinggi", "Vitamin B"],
+        id: "2",
+        title: "antioksidan alami dalam buah-buahan",
         description:
-          "Sumber karbohidrat sehat dengan serat yang baik untuk pencernaan.",
-        nutrients: {
-          protein: 3.2,
-          carbs: 19.0,
-          fat: 1.2,
-          calcium: 2,
-          iron: 0.5,
-          potassium: 270,
-        },
+          "temukan kekuatan antioksidan untuk melawan radikal bebas dan menjaga kesehatan",
+        category: "antioksidan",
+        image:
+          "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=300",
+        readTime: 7,
+        likes: 189,
+        author: "prof. kesehatan",
       },
       {
-        name: "Tomat",
-        icon: "🍅",
-        calories: 18,
-        lycopene: 2573,
-        benefits: ["Likopen", "Vitamin K", "Kalium"],
+        id: "3",
+        title: "protein nabati vs hewani",
         description:
-          "Mengandung likopen yang tinggi, antioksidan kuat untuk kesehatan kulit dan jantung.",
-        nutrients: {
-          protein: 0.9,
-          carbs: 3.9,
-          fat: 0.2,
-          calcium: 10,
-          iron: 0.3,
-          potassium: 237,
-        },
+          "perbandingan lengkap protein dari tanaman dan hewan untuk kebutuhan harian",
+        category: "protein",
+        image:
+          "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=300",
+        readTime: 8,
+        likes: 156,
+        author: "ahli gizi",
       },
       {
-        name: "Bawang Merah",
-        icon: "🧅",
-        calories: 40,
-        quercetin: "Tinggi",
-        benefits: ["Antibakteri", "Antioksidan", "Kolesterol"],
+        id: "4",
+        title: "serat untuk pencernaan sehat",
         description:
-          "Kaya quercetin dan sulfur yang membantu menurunkan kolesterol dan tekanan darah.",
-        nutrients: {
-          protein: 1.1,
-          carbs: 9.3,
-          fat: 0.1,
-          calcium: 23,
-          iron: 0.2,
-          potassium: 146,
-        },
+          "mengapa serat penting untuk kesehatan pencernaan dan sumber terbaik dari sayuran",
+        category: "serat",
+        image:
+          "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300",
+        readTime: 6,
+        likes: 201,
+        author: "dr. pencernaan",
       },
       {
-        name: "Apel",
-        icon: "🍎",
-        calories: 52,
-        fiber: 2.4,
-        benefits: ["Serat", "Antioksidan", "Pektin"],
+        id: "5",
+        title: "mineral penting dari bumi",
         description:
-          "Mengandung pektin yang baik untuk pencernaan dan mengontrol kadar gula darah.",
-        nutrients: {
-          protein: 0.3,
-          carbs: 13.8,
-          fat: 0.2,
-          calcium: 6,
-          iron: 0.1,
-          potassium: 107,
-        },
+          "eksplorasi mineral essensial yang dibutuhkan tubuh dari hasil pertanian",
+        category: "mineral",
+        image:
+          "https://images.unsplash.com/photo-1610832745743-e3f13beb4fab?w=300",
+        readTime: 9,
+        likes: 178,
+        author: "peneliti mineral",
       },
       {
-        name: "Beras Merah",
-        icon: "🍚",
-        calories: 111,
-        fiber: 1.8,
-        benefits: ["Serat", "Vitamin B", "Magnesium"],
+        id: "6",
+        title: "makanan super untuk kesehatan optimal",
         description:
-          "Beras utuh yang kaya serat dan vitamin B kompleks untuk kesehatan pencernaan.",
-        nutrients: {
-          protein: 2.3,
-          carbs: 22.0,
-          fat: 0.9,
-          calcium: 23,
-          iron: 1.5,
-          potassium: 86,
-        },
+          "daftar lengkap superfood yang mudah ditemukan dan manfaatnya",
+        category: "superfood",
+        image:
+          "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=300",
+        readTime: 10,
+        likes: 267,
+        author: "chef nutrisi",
       },
     ];
 
-    setNutritionData(mockNutritionData);
-  }, []);
-
-  const categories = [
-    { key: "semua", label: "Semua" },
-    { key: "sayuran", label: "Sayuran" },
-    { key: "buah", label: "Buah" },
-    { key: "biji", label: "Biji-bijian" },
-  ];
-
-  const getCategoryFromName = (name: string) => {
-    if (
-      ["Cabai Merah", "Jagung Manis", "Tomat", "Bawang Merah"].includes(name)
-    ) {
-      return "sayuran";
-    } else if (["Apel"].includes(name)) {
-      return "buah";
-    } else if (["Beras Merah"].includes(name)) {
-      return "biji";
-    }
-    return "semua";
+    setArticles(mockArticles);
   };
 
-  const filteredData =
+  const loadForumPosts = () => {
+    const mockPosts: ForumPost[] = [
+      {
+        id: "1",
+        title: "tips menanam sayuran organik di rumah",
+        content:
+          "bagaimana cara terbaik untuk memulai berkebun organik di halaman rumah yang terbatas?",
+        author: "gardener_pemula",
+        replies: 23,
+        likes: 45,
+        createdAt: new Date("2025-07-03"),
+      },
+      {
+        id: "2",
+        title: "pengalaman investasi pertanian pertama",
+        content:
+          "sharing pengalaman pertama kali invest di sektor pertanian dan tips untuk pemula",
+        author: "investor_baru",
+        replies: 18,
+        likes: 32,
+        createdAt: new Date("2025-07-02"),
+      },
+      {
+        id: "3",
+        title: "resep sehat dengan bahan organik",
+        content: "kumpulan resep makanan sehat menggunakan bahan organik segar",
+        author: "chef_sehat",
+        replies: 56,
+        likes: 89,
+        createdAt: new Date("2025-07-01"),
+      },
+    ];
+
+    setForumPosts(mockPosts);
+  };
+
+  const categories = [
+    { key: "semua", label: "semua" },
+    { key: "vitamin", label: "vitamin" },
+    { key: "antioksidan", label: "antioksidan" },
+    { key: "protein", label: "protein" },
+    { key: "serat", label: "serat" },
+    { key: "mineral", label: "mineral" },
+    { key: "superfood", label: "superfood" },
+  ];
+
+  const filteredArticles =
     selectedCategory === "semua"
-      ? nutritionData
-      : nutritionData.filter(
-          (item) => getCategoryFromName(item.name) === selectedCategory
-        );
+      ? articles
+      : articles.filter((article) => article.category === selectedCategory);
+
+  const tabs = [
+    { key: "nutrisi", label: "nutrisi & kesehatan", icon: Heart },
+    { key: "forum", label: "forum diskusi", icon: MessageCircle },
+  ];
 
   return (
     <div className="page active">
       <div className="page-header">
-        <h1 className="page-title">Edukasi Nutrisi</h1>
+        <h1 className="page-title">pusat edukasi</h1>
         <p className="page-subtitle">
-          Pelajari manfaat nutrisi dari berbagai produk pertanian
+          pelajari nutrisi dan kesehatan dari pangan
         </p>
       </div>
 
-      <div className="filter-bar">
-        {categories.map((category) => (
-          <button
-            key={category.key}
-            className={`filter-btn ${
-              selectedCategory === category.key ? "active" : ""
-            }`}
-            onClick={() => setSelectedCategory(category.key)}
-          >
-            {category.label}
-          </button>
-        ))}
-      </div>
-
       <div className="card">
-        <h3 className="card-title">Katalog Nutrisi Pangan</h3>
-        <div className="grid grid-2">
-          {filteredData.map((item, index) => (
-            <div key={index} className="card">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <div style={{ fontSize: "3rem" }}>{item.icon}</div>
-                <div>
-                  <h4 style={{ marginBottom: "0.5rem" }}>{item.name}</h4>
-                  <p
-                    style={{
-                      color: "var(--text-light)",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "1rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "0.5rem",
-                    background: "var(--bg-light)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      color: "var(--primary-green)",
-                    }}
-                  >
-                    {item.calories}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-light)",
-                    }}
-                  >
-                    Kalori/100g
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "0.5rem",
-                    background: "var(--bg-light)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      color: "var(--secondary-blue)",
-                    }}
-                  >
-                    {item.vitaminC ||
-                      item.fiber ||
-                      item.lycopene ||
-                      item.quercetin}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-light)",
-                    }}
-                  >
-                    {item.vitaminC
-                      ? "Vit C mg"
-                      : item.fiber
-                      ? "Serat g"
-                      : item.lycopene
-                      ? "Likopen μg"
-                      : "Quercetin"}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "0.5rem",
-                    background: "var(--bg-light)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      color: "var(--secondary-orange)",
-                    }}
-                  >
-                    High
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--text-light)",
-                    }}
-                  >
-                    Antioksidan
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "0.5rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                {item.benefits.map((benefit, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: "var(--light-green)",
-                      color: "var(--primary-green)",
-                      padding: "0.25rem 0.5rem",
-                      borderRadius: "12px",
-                      fontSize: "0.8rem",
-                    }}
-                  >
-                    {benefit}
-                  </span>
-                ))}
-              </div>
-
-              <div
-                style={{
-                  background: "var(--bg-light)",
-                  padding: "1rem",
-                  borderRadius: "8px",
-                  fontSize: "0.9rem",
-                }}
-              >
-                <h5 style={{ marginBottom: "0.5rem" }}>
-                  Komposisi Nutrisi (per 100g):
-                </h5>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: "0.5rem",
-                  }}
-                >
-                  {item.nutrients.protein && (
-                    <div>Protein: {item.nutrients.protein}g</div>
-                  )}
-                  {item.nutrients.carbs && (
-                    <div>Karbohidrat: {item.nutrients.carbs}g</div>
-                  )}
-                  {item.nutrients.fat && (
-                    <div>Lemak: {item.nutrients.fat}g</div>
-                  )}
-                  {item.nutrients.calcium && (
-                    <div>Kalsium: {item.nutrients.calcium}mg</div>
-                  )}
-                  {item.nutrients.iron && (
-                    <div>Zat Besi: {item.nutrients.iron}mg</div>
-                  )}
-                  {item.nutrients.potassium && (
-                    <div>Kalium: {item.nutrients.potassium}mg</div>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`btn ${
+                activeTab === tab.key ? "btn-primary" : "btn-outline"
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
           ))}
         </div>
       </div>
 
+      {activeTab === "nutrisi" && (
+        <>
+          <div className="card">
+            <h3 className="card-title">filter artikel</h3>
+            <div className="filter-bar">
+              {categories.map((category) => (
+                <button
+                  key={category.key}
+                  className={`filter-btn ${
+                    selectedCategory === category.key ? "active" : ""
+                  }`}
+                  onClick={() => setSelectedCategory(category.key)}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-2">
+            {filteredArticles.map((article) => (
+              <div key={article.id} className="card card-clickable">
+                <Image
+                  src={article.image}
+                  alt={article.title}
+                  width={300}
+                  height={150}
+                  style={{
+                    width: "100%",
+                    height: "150px",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                    marginBottom: "1rem",
+                  }}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <span
+                    className="organic-badge"
+                    style={{ backgroundColor: "var(--light-green)" }}
+                  >
+                    {article.category}
+                  </span>
+                  <span
+                    style={{ fontSize: "0.8rem", color: "var(--text-light)" }}
+                  >
+                    {article.readTime} min baca
+                  </span>
+                </div>
+                <h4 style={{ marginBottom: "0.5rem", fontWeight: "600" }}>
+                  {article.title}
+                </h4>
+                <p
+                  style={{
+                    color: "var(--text-light)",
+                    fontSize: "0.9rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {article.description}
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.8rem",
+                    color: "var(--text-light)",
+                  }}
+                >
+                  <span>oleh {article.author}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                    }}
+                  >
+                    <Heart size={14} />
+                    <span>{article.likes}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeTab === "forum" && (
+        <>
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">diskusi komunitas</h3>
+              <button className="btn btn-primary btn-sm">
+                <Plus size={16} />
+                buat topik
+              </button>
+            </div>
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            {forumPosts.map((post) => (
+              <div key={post.id} className="card card-clickable">
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <h4 style={{ fontWeight: "600" }}>{post.title}</h4>
+                  <span
+                    style={{ fontSize: "0.8rem", color: "var(--text-light)" }}
+                  >
+                    {post.createdAt.toLocaleDateString("id-ID")}
+                  </span>
+                </div>
+                <p
+                  style={{
+                    color: "var(--text-light)",
+                    fontSize: "0.9rem",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {post.content}
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.8rem",
+                    color: "var(--text-light)",
+                  }}
+                >
+                  <span>oleh {post.author}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "1rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                      }}
+                    >
+                      <MessageCircle size={14} />
+                      <span>{post.replies}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                      }}
+                    >
+                      <Heart size={14} />
+                      <span>{post.likes}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="card">
-        <h3 className="card-title">💡 Tips Kesehatan</h3>
+        <h3 className="card-title">tips sehat hari ini</h3>
         <div
           style={{
             background: "var(--light-green)",
@@ -383,47 +395,21 @@ export default function EducationPage() {
             marginTop: "1rem",
           }}
         >
-          <ul style={{ marginLeft: "1rem" }}>
-            <li>Kombinasikan sayuran warna-warni untuk nutrisi lengkap</li>
-            <li>Konsumsi minimal 5 porsi buah dan sayur per hari</li>
-            <li>Pilih produk organik untuk mengurangi pestisida</li>
-            <li>Variasikan jenis protein nabati dan hewani</li>
-            <li>Proses masak dengan cara yang mempertahankan nutrisi</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="card">
-        <h3 className="card-title">🥗 Rekomendasi Menu Sehat</h3>
-        <div className="grid grid-2">
           <div
             style={{
-              background: "var(--bg-light)",
-              padding: "1rem",
-              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              marginBottom: "0.5rem",
             }}
           >
-            <h4 style={{ marginBottom: "0.5rem" }}>Sarapan Sehat</h4>
-            <ul style={{ fontSize: "0.9rem", marginLeft: "1rem" }}>
-              <li>Beras merah + telur + sayuran hijau</li>
-              <li>Jus tomat segar dengan apel</li>
-              <li>Sambal bawang merah untuk rasa</li>
-            </ul>
+            <Brain size={20} color="var(--primary-green)" />
+            <strong>tahukah anda?</strong>
           </div>
-          <div
-            style={{
-              background: "var(--bg-light)",
-              padding: "1rem",
-              borderRadius: "8px",
-            }}
-          >
-            <h4 style={{ marginBottom: "0.5rem" }}>Makan Siang</h4>
-            <ul style={{ fontSize: "0.9rem", marginLeft: "1rem" }}>
-              <li>Nasi merah + ikan + tumis cabai</li>
-              <li>Sup jagung manis dengan wortel</li>
-              <li>Buah apel sebagai penutup</li>
-            </ul>
-          </div>
+          <p style={{ fontSize: "0.9rem", lineHeight: "1.5" }}>
+            konsumsi 5 porsi sayuran dan buah setiap hari dapat menurunkan
+            risiko penyakit jantung hingga 20% dan meningkatkan daya tahan tubuh
+          </p>
         </div>
       </div>
     </div>
