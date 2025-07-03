@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -15,49 +8,235 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  role          Role      @default(INVESTOR)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      UserRole
+  avatar    String?
+  phone     String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  investments   Investment[]
-  products      Product[]
+  // farmer specific fields
+  experience     Int?
+  rating         Float?
+  totalProjects  Int?
+  verified       Boolean @default(false)
+
+  // investor specific fields
+  totalInvestment Decimal?
+  totalReturn     Decimal?
+
+  // relations
+  investments       Investment[]
+  investmentUsers   InvestmentUser[]
+  products          Product[]
+  sentMessages      ChatMessage[] @relation("SentMessages")
+  receivedMessages  ChatMessage[]
+  notifications     Notification[]
+  forumPosts        ForumPost[]
+  enrollments       Enrollment[]
+  reviews           Review[]
+  
+  @@map("users")
 }
 
-enum Role {
+model Investment {
+  id          String           @id @default(cuid())
+  title       String
+  description String
+  location    String
+  roi         Float
+  duration    Int
+  minInvest   Decimal
+  target      Decimal
+  collected   Decimal          @default(0)
+  status      InvestmentStatus @default(FUNDING)
+  category    String
+  image       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  farmerId String
+  farmer   User   @relation(fields: [farmerId], references: [id])
+
+  investors      InvestmentUser[]
+  iotData        IoTData[]
+  progressLogs   ProgressLog[]
+  
+  @@map("investments")
+}
+
+model InvestmentUser {
+  id           String @id @default(cuid())
+  amount       Decimal
+  investmentId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  investment Investment @relation(fields: [investmentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([investmentId, userId])
+  @@map("investment_users")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Decimal
+  unit        String
+  category    String
+  stock       Int
+  image       String?
+  organic     Boolean  @default(false)
+  harvestDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  farmerId String
+  farmer   User   @relation(fields: [farmerId], references: [id])
+
+  reviews Review[]
+  
+  @@map("products")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Float
+  comment   String?
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("reviews")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  senderId   String
+  sender     User   @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User   @relation(fields: [receiverId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model IoTData {
+  id           String   @id @default(cuid())
+  temperature  Float
+  humidity     Float
+  soilPh       Float
+  nutrients    Float
+  timestamp    DateTime @default(now())
+
+  investmentId String
+  investment   Investment @relation(fields: [investmentId], references: [id])
+
+  @@map("iot_data")
+}
+
+model ProgressLog {
+  id          String   @id @default(cuid())
+  stage       String
+  description String
+  progress    Float
+  createdAt   DateTime @default(now())
+
+  investmentId String
+  investment   Investment @relation(fields: [investmentId], references: [id])
+
+  @@map("progress_logs")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  level       String
+  duration    Int
+  modules     Int
+  rating      Float?
+  students    Int      @default(0)
+  instructor  String
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments Enrollment[]
+  
+  @@map("courses")
+}
+
+model Enrollment {
+  id        String   @id @default(cuid())
+  progress  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model ForumPost {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  replies   Int      @default(0)
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@map("forum_posts")
+}
+
+enum UserRole {
   INVESTOR
   FARMER
   ADMIN
 }
 
-model Investment {
-  id              String      @id @default(cuid())
-  title           String
-  description     String
-  targetAmount    Float
-  collectedAmount Float       @default(0)
-  imageUrl        String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
-  // Relasi ke investor
-  investorId      String
-  investor        User        @relation(fields: [investorId], references: [id])
+enum InvestmentStatus {
+  FUNDING
+  PLANTING
+  HARVESTING
+  COMPLETED
 }
 
-model Product {
-  id            String    @id @default(cuid())
-  name          String
-  description   String
-  price         Float
-  imageUrl      String
-  stock         Int
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relasi ke penjual/petani
-  sellerId      String
-  seller        User      @relation(fields: [sellerId], references: [id])
+enum NotificationType {
+  INVESTMENT
+  ORDER
+  RETURN
+  SYSTEM
 }
