@@ -12,6 +12,7 @@ import {
   Truck,
   Phone,
   MapPin,
+  Loader,
 } from "lucide-react";
 
 export default function RegisterPage() {
@@ -37,53 +38,62 @@ export default function RegisterPage() {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "nama lengkap wajib diisi";
+      newErrors.name = "Nama lengkap wajib diisi";
     } else if (formData.name.length < 3) {
-      newErrors.name = "nama minimal 3 karakter";
+      newErrors.name = "Nama minimal 3 karakter";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "email wajib diisi";
+      newErrors.email = "Email wajib diisi";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "format email tidak valid";
+      newErrors.email = "Format email tidak valid";
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = "nomor telepon wajib diisi";
+      newErrors.phone = "Nomor telepon wajib diisi";
     } else if (!/^(\+62|62|0)8[1-9][0-9]{6,9}$/.test(formData.phone)) {
-      newErrors.phone = "format nomor telepon tidak valid";
+      newErrors.phone = "Format nomor telepon tidak valid";
     }
 
     if (!formData.location.trim()) {
-      newErrors.location = "lokasi wajib diisi";
+      newErrors.location = "Lokasi wajib diisi";
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = "password wajib diisi";
+      newErrors.password = "Password wajib diisi";
     } else if (formData.password.length < 6) {
-      newErrors.password = "password minimal 6 karakter";
+      newErrors.password = "Password minimal 6 karakter";
     }
 
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = "konfirmasi password wajib diisi";
+      newErrors.confirmPassword = "Konfirmasi password wajib diisi";
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "password tidak cocok";
+      newErrors.confirmPassword = "Password tidak cocok";
     }
 
     if (!formData.agreeTerms) {
-      newErrors.agreeTerms = "anda harus menyetujui syarat dan ketentuan";
+      newErrors.agreeTerms = "Anda harus menyetujui syarat dan ketentuan";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setLoading(true);
+    setErrors({}); // Bersihkan error sebelumnya
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -103,12 +113,14 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Redirect ke halaman login dengan notifikasi sukses
         router.push("/login?registered=true");
       } else {
-        setErrors({ general: data.message || "pendaftaran gagal" });
+        // Tampilkan pesan error dari backend
+        setErrors({ general: data.message || "Pendaftaran gagal, silakan coba lagi." });
       }
     } catch (error) {
-      setErrors({ general: "terjadi kesalahan, coba lagi" });
+      setErrors({ general: "Terjadi kesalahan pada jaringan. Mohon coba kembali." });
     } finally {
       setLoading(false);
     }
@@ -127,7 +139,7 @@ export default function RegisterPage() {
 
         <div className="card" style={{ maxWidth: "400px", width: "100%" }}>
           <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>
-            daftar akun
+            Daftar Akun
           </h2>
           <p
             style={{
@@ -136,249 +148,155 @@ export default function RegisterPage() {
               marginBottom: "2rem",
             }}
           >
-            bergabung dengan platform pertanian terdepan
+            Bergabung dengan platform pertanian terdepan.
           </p>
 
           <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem" }}>
             <button
-              type="button"
-              className={`btn ${
-                selectedRole === "INVESTOR" ? "btn-primary" : "btn-outline"
+              className={`role-btn-toggle ${
+                selectedRole === "INVESTOR" ? "active" : ""
               }`}
               onClick={() => setSelectedRole("INVESTOR")}
-              style={{ flex: 1 }}
             >
               <User size={16} />
-              investor
+              Investor
             </button>
             <button
-              type="button"
-              className={`btn ${
-                selectedRole === "FARMER" ? "btn-primary" : "btn-outline"
+              className={`role-btn-toggle ${
+                selectedRole === "FARMER" ? "active" : ""
               }`}
               onClick={() => setSelectedRole("FARMER")}
-              style={{ flex: 1 }}
             >
               <Truck size={16} />
-              petani
+              Petani
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
+            {/* Menampilkan pesan error umum */}
+            {errors.general && (
+              <div className="error-box">
+                <p>{errors.general}</p>
+              </div>
+            )}
+
             <div className="input-group">
-              <label>nama lengkap</label>
-              <div style={{ position: "relative" }}>
-                <User
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="name">Nama Lengkap</label>
+              <div className="input-icon-wrapper">
+                <User />
                 <input
+                  id="name"
+                  name="name"
                   type="text"
-                  placeholder="masukkan nama lengkap"
+                  placeholder="Masukkan nama lengkap"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
+                  onChange={handleInputChange}
                   className={`form-input ${errors.name ? "error" : ""}`}
-                  style={{ paddingLeft: "3rem" }}
+                  required
                 />
               </div>
-              {errors.name && (
-                <span className="error-message">{errors.name}</span>
-              )}
+              {errors.name && <span className="error-message">{errors.name}</span>}
             </div>
 
             <div className="input-group">
-              <label>email</label>
-              <div style={{ position: "relative" }}>
-                <Mail
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="email">Email</label>
+              <div className="input-icon-wrapper">
+                <Mail />
                 <input
+                  id="email"
+                  name="email"
                   type="email"
-                  placeholder="masukkan email anda"
+                  placeholder="Masukkan email Anda"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
+                  onChange={handleInputChange}
                   className={`form-input ${errors.email ? "error" : ""}`}
-                  style={{ paddingLeft: "3rem" }}
+                  required
                 />
               </div>
-              {errors.email && (
-                <span className="error-message">{errors.email}</span>
-              )}
+              {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
-
+            
             <div className="input-group">
-              <label>nomor telepon</label>
-              <div style={{ position: "relative" }}>
-                <Phone
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="phone">Nomor Telepon</label>
+              <div className="input-icon-wrapper">
+                <Phone />
                 <input
+                  id="phone"
+                  name="phone"
                   type="tel"
-                  placeholder="contoh: 08123456789"
+                  placeholder="Contoh: 08123456789"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
+                  onChange={handleInputChange}
                   className={`form-input ${errors.phone ? "error" : ""}`}
-                  style={{ paddingLeft: "3rem" }}
+                  required
                 />
               </div>
-              {errors.phone && (
-                <span className="error-message">{errors.phone}</span>
-              )}
+              {errors.phone && <span className="error-message">{errors.phone}</span>}
             </div>
 
             <div className="input-group">
-              <label>lokasi</label>
-              <div style={{ position: "relative" }}>
-                <MapPin
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="location">Lokasi (Kota/Kabupaten)</label>
+              <div className="input-icon-wrapper">
+                <MapPin />
                 <input
+                  id="location"
+                  name="location"
                   type="text"
-                  placeholder="contoh: jakarta selatan"
+                  placeholder="Contoh: Boyolali"
                   value={formData.location}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      location: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className={`form-input ${errors.location ? "error" : ""}`}
-                  style={{ paddingLeft: "3rem" }}
+                  required
                 />
               </div>
-              {errors.location && (
-                <span className="error-message">{errors.location}</span>
-              )}
+              {errors.location && <span className="error-message">{errors.location}</span>}
             </div>
 
             <div className="input-group">
-              <label>password</label>
-              <div style={{ position: "relative" }}>
-                <Lock
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="password">Password</label>
+              <div className="input-icon-wrapper">
+                <Lock />
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="minimal 6 karakter"
+                  placeholder="Buat password Anda"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      password: e.target.value,
-                    }))
-                  }
+                  onChange={handleInputChange}
                   className={`form-input ${errors.password ? "error" : ""}`}
-                  style={{ paddingLeft: "3rem", paddingRight: "3rem" }}
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--text-light)",
-                  }}
+                  className="input-eye-btn"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {errors.password && (
-                <span className="error-message">{errors.password}</span>
-              )}
+              {errors.password && <span className="error-message">{errors.password}</span>}
             </div>
 
             <div className="input-group">
-              <label>konfirmasi password</label>
-              <div style={{ position: "relative" }}>
-                <Lock
-                  size={20}
-                  style={{
-                    position: "absolute",
-                    left: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-light)",
-                  }}
-                />
+              <label htmlFor="confirmPassword">Konfirmasi Password</label>
+              <div className="input-icon-wrapper">
+                <Lock />
                 <input
+                  id="confirmPassword"
+                  name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="ulangi password"
+                  placeholder="Ulangi password Anda"
                   value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      confirmPassword: e.target.value,
-                    }))
-                  }
-                  className={`form-input ${
-                    errors.confirmPassword ? "error" : ""
-                  }`}
-                  style={{ paddingLeft: "3rem", paddingRight: "3rem" }}
+                  onChange={handleInputChange}
+                  className={`form-input ${errors.confirmPassword ? "error" : ""}`}
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: "absolute",
-                    right: "1rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--text-light)",
-                  }}
+                  className="input-eye-btn"
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
               {errors.confirmPassword && (
@@ -386,79 +304,44 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <div className="input-group">
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "0.5rem",
-                  fontSize: "0.9rem",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.agreeTerms}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      agreeTerms: e.target.checked,
-                    }))
-                  }
-                  className={errors.agreeTerms ? "error" : ""}
-                  style={{ marginTop: "0.25rem" }}
-                />
-                <span>
-                  saya menyetujui{" "}
-                  <Link href="/terms" style={{ color: "var(--primary-green)" }}>
-                    syarat dan ketentuan
-                  </Link>{" "}
-                  serta{" "}
-                  <Link
-                    href="/privacy"
-                    style={{ color: "var(--primary-green)" }}
-                  >
-                    kebijakan privasi
-                  </Link>
-                </span>
+            <div className="input-group-checkbox">
+              <input
+                id="agreeTerms"
+                name="agreeTerms"
+                type="checkbox"
+                checked={formData.agreeTerms}
+                onChange={handleInputChange}
+                className={errors.agreeTerms ? "error" : ""}
+              />
+              <label htmlFor="agreeTerms">
+                Saya setuju dengan{" "}
+                <Link href="/terms" className="link">
+                  Syarat & Ketentuan
+                </Link>
               </label>
-              {errors.agreeTerms && (
-                <span className="error-message">{errors.agreeTerms}</span>
-              )}
             </div>
-
-            {errors.general && (
-              <div
-                style={{
-                  background: "#fff5f5",
-                  border: "1px solid #feb2b2",
-                  borderRadius: "8px",
-                  padding: "0.75rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <p style={{ color: "#c53030", margin: 0, fontSize: "0.9rem" }}>
-                  {errors.general}
-                </p>
-              </div>
+            {errors.agreeTerms && (
+              <span className="error-message">{errors.agreeTerms}</span>
             )}
 
             <button
               type="submit"
               className="btn btn-primary btn-full"
               disabled={loading}
+              style={{ marginTop: '1rem' }}
             >
-              {loading ? "mendaftar..." : "daftar"}
+              {loading ? <Loader className="animate-spin" /> : "Daftar"}
             </button>
           </form>
 
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
             <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
-              sudah punya akun?{" "}
+              Sudah punya akun?{" "}
               <Link
                 href="/login"
                 style={{ color: "var(--primary-green)", fontWeight: "500" }}
               >
-                masuk sekarang
+                Masuk di sini
               </Link>
             </p>
           </div>

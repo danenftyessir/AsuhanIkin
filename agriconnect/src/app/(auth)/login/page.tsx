@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/hooks/use-auth";
-import { Eye, EyeOff, Mail, Lock, User, Truck } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth"; // Hook yang sudah kita perbarui
+import { Eye, EyeOff, Mail, Lock, User, Truck, Loader } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { login, loading: authLoading } = useAuth(); // Ambil state loading dari useAuth
+  const [isSubmitting, setIsSubmitting] = useState(false); // State loading khusus untuk form submit
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"INVESTOR" | "FARMER">(
     "INVESTOR"
@@ -24,15 +24,15 @@ export default function LoginPage() {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = "email wajib diisi";
+      newErrors.email = "Email wajib diisi";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "format email tidak valid";
+      newErrors.email = "Format email tidak valid";
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = "password wajib diisi";
+      newErrors.password = "Password wajib diisi";
     } else if (formData.password.length < 6) {
-      newErrors.password = "password minimal 6 karakter";
+      newErrors.password = "Password minimal 6 karakter";
     }
 
     setErrors(newErrors);
@@ -41,32 +41,40 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
-    setLoading(true);
+    setIsSubmitting(true);
+    setErrors({}); // Bersihkan error sebelumnya
+
     try {
-      const result = await login(
-        formData.email,
-        formData.password,
-        selectedRole
-      );
+      const result = await login(formData.email, formData.password);
 
       if (result.success) {
-        if (selectedRole === "FARMER") {
+        // Redirect berdasarkan peran dari data pengguna yang dikembalikan
+        const userRole = JSON.parse(localStorage.getItem("agri-user") || "{}").role;
+        if (userRole === "FARMER") {
           router.push("/farmer-dashboard");
         } else {
           router.push("/dashboard");
         }
       } else {
-        setErrors({ general: result.message || "login gagal" });
+        setErrors({ general: result.message || "Login gagal, periksa kembali email dan password Anda." });
       }
     } catch (error) {
-      setErrors({ general: "terjadi kesalahan, coba lagi" });
+      setErrors({ general: "Terjadi kesalahan, silakan coba lagi." });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  // Tampilkan loading jika hook sedang memverifikasi token di awal
+  if (authLoading) {
+      return (
+          <div className="landing-page">
+              <Loader className="animate-spin" size={48} />
+          </div>
+      );
+  }
 
   return (
     <div className="landing-page">
@@ -81,7 +89,7 @@ export default function LoginPage() {
 
         <div className="card" style={{ maxWidth: "400px", width: "100%" }}>
           <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>
-            masuk akun
+            Masuk Akun
           </h2>
           <p
             style={{
@@ -90,37 +98,13 @@ export default function LoginPage() {
               marginBottom: "2rem",
             }}
           >
-            selamat datang kembali di platform pertanian
+            Selamat datang kembali di platform pertanian.
           </p>
-
-          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem" }}>
-            <button
-              type="button"
-              className={`btn ${
-                selectedRole === "INVESTOR" ? "btn-primary" : "btn-outline"
-              }`}
-              onClick={() => setSelectedRole("INVESTOR")}
-              style={{ flex: 1 }}
-            >
-              <User size={16} />
-              investor
-            </button>
-            <button
-              type="button"
-              className={`btn ${
-                selectedRole === "FARMER" ? "btn-primary" : "btn-outline"
-              }`}
-              onClick={() => setSelectedRole("FARMER")}
-              style={{ flex: 1 }}
-            >
-              <Truck size={16} />
-              petani
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
+          
+          {/* Form tidak perlu lagi memilih role, karena role akan didapat dari database */}
+          <form onSubmit={handleSubmit} noValidate>
             <div className="input-group">
-              <label>email</label>
+              <label htmlFor="email">Email</label>
               <div style={{ position: "relative" }}>
                 <Mail
                   size={20}
@@ -133,6 +117,7 @@ export default function LoginPage() {
                   }}
                 />
                 <input
+                  id="email"
                   type="email"
                   placeholder="masukkan email anda"
                   value={formData.email}
@@ -141,6 +126,7 @@ export default function LoginPage() {
                   }
                   className={`form-input ${errors.email ? "error" : ""}`}
                   style={{ paddingLeft: "3rem" }}
+                  required
                 />
               </div>
               {errors.email && (
@@ -149,7 +135,7 @@ export default function LoginPage() {
             </div>
 
             <div className="input-group">
-              <label>password</label>
+              <label htmlFor="password">Password</label>
               <div style={{ position: "relative" }}>
                 <Lock
                   size={20}
@@ -162,6 +148,7 @@ export default function LoginPage() {
                   }}
                 />
                 <input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="masukkan password anda"
                   value={formData.password}
@@ -173,9 +160,11 @@ export default function LoginPage() {
                   }
                   className={`form-input ${errors.password ? "error" : ""}`}
                   style={{ paddingLeft: "3rem", paddingRight: "3rem" }}
+                  required
                 />
                 <button
                   type="button"
+                  aria-label="Toggle password visibility"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: "absolute",
@@ -195,91 +184,32 @@ export default function LoginPage() {
                 <span className="error-message">{errors.password}</span>
               )}
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  fontSize: "0.9rem",
-                }}
-              >
-                <input type="checkbox" />
-                ingat saya
-              </label>
-              <Link
-                href="/forgot-password"
-                style={{ color: "var(--primary-green)", fontSize: "0.9rem" }}
-              >
-                lupa password?
-              </Link>
-            </div>
-
+            
             {errors.general && (
-              <div
-                style={{
-                  background: "#fff5f5",
-                  border: "1px solid #feb2b2",
-                  borderRadius: "8px",
-                  padding: "0.75rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <p style={{ color: "#c53030", margin: 0, fontSize: "0.9rem" }}>
-                  {errors.general}
-                </p>
+              <div className="error-box">
+                <p>{errors.general}</p>
               </div>
             )}
 
             <button
               type="submit"
               className="btn btn-primary btn-full"
-              disabled={loading}
+              disabled={isSubmitting}
             >
-              {loading ? "masuk..." : "masuk"}
+              {isSubmitting ? <Loader className="animate-spin" /> : "Masuk"}
             </button>
           </form>
 
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
             <p style={{ color: "var(--text-light)", fontSize: "0.9rem" }}>
-              belum punya akun?{" "}
+              Belum punya akun?{" "}
               <Link
                 href="/register"
                 style={{ color: "var(--primary-green)", fontWeight: "500" }}
               >
-                daftar sekarang
+                Daftar Sekarang
               </Link>
             </p>
-          </div>
-        </div>
-
-        <div
-          className="card"
-          style={{ maxWidth: "400px", width: "100%", marginTop: "1rem" }}
-        >
-          <h4 style={{ marginBottom: "1rem" }}>akun demo</h4>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.5rem",
-              fontSize: "0.9rem",
-            }}
-          >
-            <div>
-              <strong>investor:</strong> investor@test.com / password
-            </div>
-            <div>
-              <strong>petani:</strong> farmer@test.com / password
-            </div>
           </div>
         </div>
       </div>

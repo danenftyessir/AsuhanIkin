@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 
 export default function HomePage() {
-  const [selectedRole, setSelectedRole] = useState<string>("");
-
   return (
     <div className="landing-page">
       <div className="landing-content">
@@ -17,13 +14,10 @@ export default function HomePage() {
           langsung dari kebun.
         </p>
         <div className="role-buttons">
-          <Link href="/dashboard?role=investor" className="role-btn investor">
+          <Link href="/login" className="role-btn investor">
             <span>💼 Saya Investor</span>
           </Link>
-          <Link
-            href="/farmer-dashboard?role=farmer"
-            className="role-btn farmer"
-          >
+          <Link href="/login" className="role-btn farmer">
             <span>👨‍🌾 Saya Petani</span>
           </Link>
         </div>

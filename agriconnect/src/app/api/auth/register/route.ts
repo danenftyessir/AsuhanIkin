@@ -1,90 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client"; // Import enum dari Prisma
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, phone, location, password, role } =
-      await request.json();
+    const { name, email, phone, location, password, role } = await request.json();
 
+    // Validasi input dasar
     if (!name || !email || !phone || !location || !password || !role) {
       return NextResponse.json(
-        { success: false, message: "semua field wajib diisi" },
+        { success: false, message: "Semua field wajib diisi" },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
+    // Cek apakah peran yang diinput valid
+    if (!Object.values(UserRole).includes(role)) {
       return NextResponse.json(
-        { success: false, message: "password minimal 6 karakter" },
+        { success: false, message: "Peran tidak valid" },
         { status: 400 }
       );
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, message: "format email tidak valid" },
-        { status: 400 }
-      );
-    }
-
-    const phoneRegex = /^(\+62|62|0)8[1-9][0-9]{6,9}$/;
-    if (!phoneRegex.test(phone)) {
-      return NextResponse.json(
-        { success: false, message: "format nomor telepon tidak valid" },
-        { status: 400 }
-      );
-    }
-
-    // cek email sudah terdaftar
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { phone }],
-      },
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { success: false, message: "email atau nomor telepon sudah terdaftar" },
+        { success: false, message: "Email sudah terdaftar" },
         { status: 400 }
       );
     }
 
-    // mock user creation - in production, use proper password hashing
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      phone,
-      location,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      verified: false,
-      ...(role === "FARMER" && {
-        experience: 0,
-        rating: 0,
-        totalProjects: 0,
-        verified: false,
-      }),
-      ...(role === "INVESTOR" && {
-        totalInvestment: 0,
-        totalReturn: 0,
-      }),
-    };
+    // Enkripsi password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        location,
+        role, // Sekarang menggunakan enum UserRole
+        // Field lain akan menggunakan nilai default dari skema
+      },
+    });
+
+    // Hapus password dari objek user sebelum dikirim sebagai respons
+    const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       success: true,
-      data: {
-        user: newUser,
-        message: "pendaftaran berhasil",
-      },
-      message: "pendaftaran berhasil, silakan login",
+      data: userWithoutPassword,
+      message: "Pendaftaran berhasil",
     });
+
   } catch (error) {
-    console.error("register error:", error);
+    console.error("Register error:", error);
     return NextResponse.json(
-      { success: false, message: "terjadi kesalahan server" },
+      { success: false, message: "Terjadi kesalahan pada server" },
       { status: 500 }
     );
   }
